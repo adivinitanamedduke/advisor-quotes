@@ -31,14 +31,43 @@ A small, runnable slice of an adviser-facing quoting capability: an adviser capt
 
 All configuration can come from environment variables; see [.env.example](.env.example).
 
-Logs are compact JSON lines with `TraceId` and `SpanId` by default; set `Observability__LogFormat=text` for readable lines that still show the TraceId.
-
 ### Health
 
 - `GET /health/live`: 200 while the process is up.
 - `GET /health/ready`: 200 when PostgreSQL is reachable, 503 when not.
 
 Both return JSON (`{"status":"Healthy","checks":[...]}`) and need no `X-Adviser-Id`.
+
+### Following a request
+
+Every response carries an `X-Trace-Id` header (errors included). The same id is the OpenTelemetry trace id and the `TraceId` property on every log line written while handling that request, so one id links the response, the logs and the spans.
+
+1. Run the API and keep its output in a file:
+   ```bash
+   dotnet run --project API 2>&1 | tee api.log
+   ```
+   Logs are one compact JSON object per line. For readable lines (still with the TraceId) set `Observability__LogFormat=text`.
+2. Make a call and read the trace id from the response headers (or from the Swagger UI "Response headers" box):
+   ```bash
+   curl -i -X POST http://localhost:5222/api/v1/quotes -H "X-Adviser-Id: adv-1" -H "Content-Type: application/json" -d @quote.json
+   ```
+   `quote.json` is any create-quote body (Swagger shows the shape). The response includes:
+   ```
+   X-Trace-Id: 65c0f870c25bd7f54d5d44240ca9af28
+   ```
+3. Find the logs for that request, including the request summary line (`HTTP POST /api/v1/quotes responded 201 in 42.1 ms`):
+   ```bash
+   grep 65c0f870c25bd7f54d5d44240ca9af28 api.log
+   ```
+4. See the spans. Without a collector they are printed to the console (`Activity.TraceId: <id>` blocks, `grep -A12 <id> api.log`). With Docker, Jaeger gives the timeline view:
+   ```bash
+   docker compose --profile observability up -d jaeger
+   export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+   dotnet run --project API
+   ```
+   Open http://localhost:16686, paste the trace id into "Lookup by Trace ID" (or pick service `advisor-quotes-api`). A quote create shows the HTTP span, then `quote.create`, `quote.duplicate_check`, `pricing.calculate` and one `postgresql` span per SQL command; a status change shows `quote.status_change`.
+
+Health probes are logged at Debug so they do not drown real traffic. When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, metrics go to the same endpoint (Jaeger ignores them; a full OpenTelemetry collector keeps them).
 
 ### Tests
 

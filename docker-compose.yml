@@ -16,5 +16,18 @@ services:
       timeout: 3s
       retries: 10
 
+  # Trace viewer, only with `docker compose --profile observability up -d jaeger`.
+  # Point the API at it with OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: advisor-quotes-jaeger
+    profiles: ["observability"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
 volumes:
   postgres-data:
