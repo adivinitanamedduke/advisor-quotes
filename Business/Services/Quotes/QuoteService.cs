@@ -6,6 +6,7 @@ using Business.Abstractions.Interfaces.Business.Quotes;
 using Business.Abstractions.Interfaces.Repository.Quotes;
 using Business.Abstractions.Models;
 using Business.Abstractions.Telemetry;
+using Business.Mappers;
 using Business.Validators;
 using Contracts.API.Public.Quotes.Requests;
 using FluentValidation;
@@ -19,6 +20,7 @@ namespace Business.Services.Quotes
         IQuoteRepository quoteRepository,
         IPremiumCalculator premiumCalculator,
         IValidator<CreateQuoteRequest> createValidator,
+        IValidator<SearchQuotesRequest> searchValidator,
         IOptions<IdempotencyOptions> idempotencyOptions,
         TimeProvider timeProvider,
         ILogger<QuoteService> logger) : IQuoteService
@@ -88,11 +90,23 @@ namespace Business.Services.Quotes
             return new CreateQuoteOutcome(stored, IsReplay: true);
         }
 
-        public Task<PagedList<Quote>> SearchQuotesAsync(
+        public async Task<PagedList<Quote>> SearchQuotesAsync(
             SearchQuotesRequest request,
             string adviserId,
-            CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
+            CancellationToken cancellationToken = default)
+        {
+            await searchValidator.ValidateOrThrowAsync(request, cancellationToken);
+            EnsureAdviser(adviserId);
+
+            QuoteStatus? status = request.Status is null ? null : QuoteMapper.ToQuoteStatus(request.Status);
+
+            var page = await quoteRepository.SearchAsync(adviserId, status, request.PageNumber, request.PageSize, cancellationToken);
+
+            logger.LogInformation(
+                "Search by adviser {AdviserId} for status {Status} returned {Count} of {TotalCount} quotes",
+                adviserId, request.Status ?? "any", page.Items.Count, page.TotalCount);
+            return page;
+        }
 
         public async Task<Quote?> GetQuoteAsync(Guid identifier, string adviserId, CancellationToken cancellationToken = default)
         {

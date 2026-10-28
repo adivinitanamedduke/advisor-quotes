@@ -21,13 +21,37 @@ namespace Data.SQL.Repositories.Quotes
         public Task<Quote?> GetForUpdateAsync(Guid identifier, string adviserId, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
 
-        public Task<PagedList<Quote>> SearchAsync(
+        public async Task<PagedList<Quote>> SearchAsync(
             string adviserId,
             QuoteStatus? status,
             int pageNumber,
             int pageSize,
-            CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
+            CancellationToken cancellationToken = default)
+        {
+            var query = db.Quotes.AsNoTracking().Where(q => q.AdviserId == adviserId);
+            if (status is not null)
+            {
+                query = query.Where(q => q.Status == status);
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            // Newest first; Id breaks ties so pages never overlap
+            var items = await query
+                .OrderByDescending(q => q.CreatedAt)
+                .ThenByDescending(q => q.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedList<Quote>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
 
         public async Task<Quote> AddUnlessDuplicateAsync(
             Quote candidate,

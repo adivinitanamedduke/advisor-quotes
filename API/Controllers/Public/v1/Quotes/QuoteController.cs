@@ -38,6 +38,17 @@ namespace API.Controllers.Public.v1.Quotes
             return CreatedAtRoute(GetQuoteRouteName, new { version = "1", identifier = dto.Identifier }, dto);
         }
 
+        /// <summary>Lists the calling adviser's quotes, newest first, optionally filtered by status.</summary>
+        [HttpPost("search")]
+        [ProducesResponseType(typeof(PagedResult<QuoteSummaryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SearchAsync([FromBody] SearchQuotesRequest request, CancellationToken cancellationToken)
+        {
+            var page = await quoteService.SearchQuotesAsync(request, AdviserId, cancellationToken);
+            return Ok(page.ToPagedResult());
+        }
+
         /// <summary>Gets one of the calling adviser's quotes, with its status history.</summary>
         [HttpGet("{identifier:guid}", Name = GetQuoteRouteName)]
         [ProducesResponseType(typeof(QuoteDto), StatusCodes.Status200OK)]

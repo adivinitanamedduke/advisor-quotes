@@ -23,6 +23,7 @@ namespace Tests.Unit.Business.Services.Quotes
             _repository.Object,
             _calculator.Object,
             new CreateQuoteRequestValidator(),
+            new SearchQuotesRequestValidator(),
             Options.Create(new IdempotencyOptions { WindowMinutes = WindowMinutes }),
             new FixedTimeProvider(QuoteTestData.Now),
             NullLogger<QuoteService>.Instance);
