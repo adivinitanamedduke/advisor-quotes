@@ -1,5 +1,6 @@
 import type {
   CreateQuoteRequest,
+  ErrorDetail,
   ErrorResponse,
   PagedResult,
   ProductDto,
@@ -22,6 +23,11 @@ export class ApiError extends Error {
     this.status = status
     this.body = body
   }
+}
+
+/** The field errors an API error carries, or none for other errors. */
+export function errorDetails(error: unknown): ErrorDetail[] {
+  return error instanceof ApiError ? (error.body?.errors ?? []) : []
 }
 
 export interface CreateQuoteResult {

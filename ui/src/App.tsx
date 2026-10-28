@@ -3,6 +3,7 @@ import { AdviserBar } from './adviser/AdviserBar'
 import { useAdviserId } from './adviser/useAdviserId'
 import { ApiContext } from './api/ApiContext'
 import { createApiClient, DEFAULT_API_BASE_URL } from './api/client'
+import { CreateQuote } from './quotes/CreateQuote'
 import { QuoteList } from './quotes/QuoteList'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
@@ -27,6 +28,8 @@ export function App() {
             onOpen={(identifier) => setView({ name: 'detail', identifier })}
             onCreate={() => setView({ name: 'create' })}
           />
+        ) : view.name === 'create' ? (
+          <CreateQuote onOpen={(identifier) => setView({ name: 'detail', identifier })} onCancel={showList} />
         ) : (
           <button type="button" className="link" onClick={showList}>
             ← Back to quotes

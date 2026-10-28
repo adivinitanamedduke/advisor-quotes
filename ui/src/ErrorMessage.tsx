@@ -1,11 +1,17 @@
-import { ApiError } from './api/client'
+import { errorDetails } from './api/client'
+import type { ErrorDetail } from './api/types'
+
+interface Props {
+  error: unknown
+  /** Field errors to list; defaults to all of them. Forms pass the ones they cannot show inline. */
+  details?: ErrorDetail[]
+}
 
 /** Shows an API error: its message, then each field error the server listed. */
-export function ErrorMessage({ error }: { error: unknown }) {
+export function ErrorMessage({ error, details = errorDetails(error) }: Props) {
   if (!error) return null
 
   const message = error instanceof Error ? error.message : 'Something went wrong.'
-  const details = error instanceof ApiError ? (error.body?.errors ?? []) : []
 
   return (
     <div role="alert" className="error">
