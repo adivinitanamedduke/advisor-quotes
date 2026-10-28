@@ -38,6 +38,15 @@ dotnet test Tests.Unit
 dotnet test Tests.Integration   # needs TEST_POSTGRES_CONNECTION or Docker
 ```
 
+Integration tests run the real API (`WebApplicationFactory`) against PostgreSQL with a fixed fake premium calculator. They pick the database in this order:
+
+1. `TEST_POSTGRES_CONNECTION`, pointing at a **disposable** database (it is migrated at start and its quote tables are truncated before every test):
+   ```bash
+   export TEST_POSTGRES_CONNECTION="Host=127.0.0.1;Port=5432;Database=advisor_quotes_tests;Username=<user>;Password=<password>;SSL Mode=Disable"
+   ```
+2. Otherwise a `postgres:16-alpine` Testcontainer, when Docker is running.
+3. Otherwise every integration test is reported as skipped, with the reason.
+
 ## Approach
 
 Layered service with explicit project boundaries:
