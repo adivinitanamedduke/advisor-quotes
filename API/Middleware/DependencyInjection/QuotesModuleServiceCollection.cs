@@ -1,7 +1,12 @@
 using Business.Abstractions.Config;
+using Business.Abstractions.Interfaces.Business.Quotes;
+using Business.Abstractions.Interfaces.Repository.Quotes;
+using Business.Services.Quotes;
 using Contracts.API.Public.Quotes.Requests;
 using Contracts.API.Public.Quotes.Requests.Validators;
+using Data.SQL.Repositories.Quotes;
 using FluentValidation;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace API.Middleware.DependencyInjection
 {
@@ -16,7 +21,9 @@ namespace API.Middleware.DependencyInjection
             services.AddScoped<IValidator<SearchQuotesRequest>, SearchQuotesRequestValidator>();
             services.AddScoped<IValidator<UpdateQuoteStatusRequest>, UpdateQuoteStatusRequestValidator>();
 
-            // Quote lifecycle session registers IQuoteService and IQuoteRepository here
+            services.TryAddSingleton(TimeProvider.System);
+            services.AddScoped<IQuoteRepository, QuoteRepository>();
+            services.AddScoped<IQuoteService, QuoteService>();
 
             return services;
         }
