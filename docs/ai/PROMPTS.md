@@ -48,4 +48,20 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 
 > Skip Docker for now; keep using the native PostgreSQL on port 5437.
 
+### 2026-10-28 | phase 0 | git setup
+
+> I am loggen in to GitHub, so git must be setup on project folders and be ready for commits.
+
+> In chrome
+
+> Commit identity: Njongo Villo <njongo.villo@gmail.com>. Create a private GitHub repo: yes.
+
+### 2026-10-28 | phase 0 | commit policy
+
+> I neee individual commits as we build
+
+> a flow like endpoint->service-repository-EF-Data must have a commit with short precise description.
+
+> Each flow must be validated and unit tested.
+
 ## Automatic entries
