@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` and type an adviser id (any text, e.g. `ADV-001`) in the header bar. It is sent as `X-Adviser-Id` on every call and remembered in `localStorage`.
+Open `http://localhost:5173` and type an adviser id (any text, e.g. `ADV-001`) in the header bar, then press Enter or tab away. It is sent as `X-Adviser-Id` on every call and remembered in `localStorage`.
 
 The API base URL defaults to `http://localhost:5222`. To point elsewhere, copy `.env.example` to `.env.local` and set `VITE_API_BASE_URL`.
 

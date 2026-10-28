@@ -48,7 +48,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` and enter an adviser id in the header bar. The API URL defaults to `http://localhost:5222` (override with `VITE_API_BASE_URL`). `npm test`, `npm run lint` and `npm run build` check it. Details: [ui/README.md](ui/README.md).
+Open `http://localhost:5173` and enter an adviser id in the header bar (applied on Enter or blur). The API URL defaults to `http://localhost:5222` (override with `VITE_API_BASE_URL`). `npm test`, `npm run lint` and `npm run build` check it. Details: [ui/README.md](ui/README.md).
 
 ## Approach
 

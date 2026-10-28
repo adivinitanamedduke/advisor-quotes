@@ -14,7 +14,18 @@ describe('App', () => {
     vi.unstubAllGlobals()
   })
 
-  it('AdviserInput_Typed_PersistsToLocalStorage', async () => {
+  it('AdviserInput_EnterPressed_PersistsToLocalStorage', async () => {
+    // Arrange
+    render(<App />)
+
+    // Act
+    await userEvent.type(screen.getByLabelText('Adviser'), 'ADV-7{Enter}')
+
+    // Assert
+    expect(localStorage.getItem(ADVISER_STORAGE_KEY)).toBe('ADV-7')
+  })
+
+  it('AdviserInput_Typing_DoesNotSearchPerKeystroke', async () => {
     // Arrange
     render(<App />)
 
@@ -22,7 +33,23 @@ describe('App', () => {
     await userEvent.type(screen.getByLabelText('Adviser'), 'ADV-7')
 
     // Assert
-    expect(localStorage.getItem(ADVISER_STORAGE_KEY)).toBe('ADV-7')
+    expect(fetch).not.toHaveBeenCalled()
+    expect(localStorage.getItem(ADVISER_STORAGE_KEY)).toBeNull()
+  })
+
+  it('AdviserInput_Blurred_SearchesOnceWithAdviserHeader', async () => {
+    // Arrange
+    render(<App />)
+    await userEvent.type(screen.getByLabelText('Adviser'), ' ADV-7 ')
+
+    // Act
+    await userEvent.tab()
+
+    // Assert
+    expect(await screen.findByText('No quotes found.')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const init = vi.mocked(fetch).mock.calls[0][1] as RequestInit
+    expect((init.headers as Record<string, string>)['X-Adviser-Id']).toBe('ADV-7')
   })
 
   it('AdviserInput_StoredValue_IsRestored', () => {
