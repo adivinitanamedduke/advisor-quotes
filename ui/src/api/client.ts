@@ -16,12 +16,15 @@ export const DEFAULT_API_BASE_URL = 'http://localhost:5222'
 export class ApiError extends Error {
   readonly status: number
   readonly body: ErrorResponse | null
+  /** The API's X-Trace-Id for this request, for finding it in the logs. */
+  readonly traceId: string | null
 
-  constructor(status: number, message: string, body: ErrorResponse | null = null) {
+  constructor(status: number, message: string, body: ErrorResponse | null = null, traceId: string | null = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.body = body
+    this.traceId = traceId
   }
 }
 
@@ -72,7 +75,12 @@ export function createApiClient({ baseUrl, adviserId, fetchImpl = fetch }: Clien
 
     if (!response.ok) {
       const errorBody = await readErrorBody(response)
-      throw new ApiError(response.status, errorBody?.message || `Request failed (${response.status})`, errorBody)
+      throw new ApiError(
+        response.status,
+        errorBody?.message || `Request failed (${response.status})`,
+        errorBody,
+        response.headers.get('X-Trace-Id'),
+      )
     }
 
     return response

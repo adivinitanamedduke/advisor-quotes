@@ -1,4 +1,4 @@
-import { errorDetails } from './api/client'
+import { ApiError, errorDetails } from './api/client'
 import type { ErrorDetail } from './api/types'
 
 interface Props {
@@ -12,6 +12,7 @@ export function ErrorMessage({ error, details = errorDetails(error) }: Props) {
   if (!error) return null
 
   const message = error instanceof Error ? error.message : 'Something went wrong.'
+  const traceId = error instanceof ApiError ? error.traceId : null
 
   return (
     <div role="alert" className="error">
@@ -26,6 +27,7 @@ export function ErrorMessage({ error, details = errorDetails(error) }: Props) {
           ))}
         </ul>
       )}
+      {traceId && <p className="trace">Trace id: {traceId}</p>}
     </div>
   )
 }

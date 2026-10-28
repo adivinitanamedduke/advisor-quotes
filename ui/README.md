@@ -16,7 +16,7 @@ Open `http://localhost:5173` and type an adviser id (any text, e.g. `ADV-001`) i
 
 The API base URL defaults to `http://localhost:5222`. To point elsewhere, copy `.env.example` to `.env.local` and set `VITE_API_BASE_URL`.
 
-The UI calls the API from another origin, so the API must allow CORS from `http://localhost:5173` and expose the `Idempotent-Replayed` response header.
+The UI calls the API from another origin, so the API must allow CORS from `http://localhost:5173` and expose the `Idempotent-Replayed` and `X-Trace-Id` response headers. Errors show the trace id so it can be found in the API logs.
 
 ## Scripts
 

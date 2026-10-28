@@ -75,6 +75,31 @@ describe('createApiClient', () => {
     expect(error.body.errors).toEqual(body.errors)
   })
 
+  it('send_ErrorWithTraceHeader_CapturesTraceId', async () => {
+    // Arrange
+    const body = { statusCode: 500, message: 'An unexpected error occurred', errors: [] }
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(body, 500, { 'X-Trace-Id': 'abc123' }))
+    const api = createApiClient({ baseUrl: 'http://api.test', adviserId: 'ADV-1', fetchImpl })
+
+    // Act
+    const error = await api.getQuote('q-1').catch((e) => e)
+
+    // Assert
+    expect(error.traceId).toBe('abc123')
+  })
+
+  it('send_ErrorWithoutTraceHeader_HasNullTraceId', async () => {
+    // Arrange
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ statusCode: 404, message: 'Not found', errors: [] }, 404))
+    const api = createApiClient({ baseUrl: 'http://api.test', adviserId: 'ADV-1', fetchImpl })
+
+    // Act
+    const error = await api.getQuote('q-1').catch((e) => e)
+
+    // Assert
+    expect(error.traceId).toBeNull()
+  })
+
   it('send_NonJsonError_ThrowsApiErrorWithStatus', async () => {
     // Arrange
     const fetchImpl = vi.fn().mockResolvedValue(new Response('oops', { status: 502 }))
