@@ -24,6 +24,7 @@ namespace Tests.Unit.Business.Services.Quotes
             _calculator.Object,
             new CreateQuoteRequestValidator(),
             new SearchQuotesRequestValidator(),
+            new UpdateQuoteStatusRequestValidator(),
             Options.Create(new IdempotencyOptions { WindowMinutes = WindowMinutes }),
             new FixedTimeProvider(QuoteTestData.Now),
             NullLogger<QuoteService>.Instance);

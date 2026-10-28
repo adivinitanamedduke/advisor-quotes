@@ -44,6 +44,17 @@ POST /api/v1/Quote
   ← 201 new quote | 200 replay (Idempotent-Replayed: true) | 409 key reused with another body
 ```
 
+## Status change flow
+
+```
+PUT /api/v1/Quote/{identifier}/status
+  QuoteController.UpdateStatusAsync    bind body, read X-Adviser-Id
+  QuoteService.UpdateQuoteStatusAsync  validate → load tracked (adviser scoped) → status machine
+                                       → set status + UpdatedAt, add history row (ChangedBy, Reason)
+  QuoteRepository.SaveChangesAsync     UPDATE quote WHERE xmin matches + INSERT history, one transaction
+  ← 200 quote | 400 bad transition | 404 unknown or other adviser | 409 concurrent update (xmin changed)
+```
+
 ## Layer rules
 
 - Pricing never reads or writes quotes; quotes call pricing through `IPremiumCalculator` only. This is the seam for a separate pricing service.

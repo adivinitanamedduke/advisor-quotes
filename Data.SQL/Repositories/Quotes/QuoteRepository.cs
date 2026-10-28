@@ -1,4 +1,5 @@
 using Business.Abstractions.Domain.Quotes;
+using Business.Abstractions.Exceptions;
 using Business.Abstractions.Interfaces.Repository.Quotes;
 using Business.Abstractions.Models;
 using Data.SQL.EF;
@@ -19,7 +20,9 @@ namespace Data.SQL.Repositories.Quotes
                 .FirstOrDefaultAsync(q => q.Identifier == identifier && q.AdviserId == adviserId, cancellationToken);
 
         public Task<Quote?> GetForUpdateAsync(Guid identifier, string adviserId, CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
+            db.Quotes
+                .Include(q => q.StatusHistory)
+                .FirstOrDefaultAsync(q => q.Identifier == identifier && q.AdviserId == adviserId, cancellationToken);
 
         public async Task<PagedList<Quote>> SearchAsync(
             string adviserId,
@@ -96,8 +99,19 @@ namespace Data.SQL.Repositories.Quotes
             }
         }
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // The quote update and its new history row go out in one SaveChanges, so one implicit transaction
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // xmin changed since the quote was read: someone else updated it first
+                throw new ConflictException("The quote was changed by another request; reload it and try again");
+            }
+        }
 
         private async Task<Quote?> FindDuplicateAsync(Quote candidate, DateTime fingerprintWindowStart, CancellationToken cancellationToken)
         {

@@ -21,6 +21,7 @@ namespace Business.Services.Quotes
         IPremiumCalculator premiumCalculator,
         IValidator<CreateQuoteRequest> createValidator,
         IValidator<SearchQuotesRequest> searchValidator,
+        IValidator<UpdateQuoteStatusRequest> statusValidator,
         IOptions<IdempotencyOptions> idempotencyOptions,
         TimeProvider timeProvider,
         ILogger<QuoteService> logger) : IQuoteService
@@ -121,12 +122,53 @@ namespace Business.Services.Quotes
             return quote;
         }
 
-        public Task<Quote> UpdateQuoteStatusAsync(
+        public async Task<Quote> UpdateQuoteStatusAsync(
             Guid identifier,
             UpdateQuoteStatusRequest request,
             string adviserId,
-            CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
+            CancellationToken cancellationToken = default)
+        {
+            await statusValidator.ValidateOrThrowAsync(request, cancellationToken);
+            EnsureAdviser(adviserId);
+
+            var target = QuoteMapper.ToQuoteStatus(request.Status);
+
+            using var activity = QuoteTelemetry.ActivitySource.StartActivity(QuoteTelemetry.Spans.QuoteStatusChange);
+            activity?.SetTag(QuoteTelemetry.Tags.AdviserId, adviserId);
+            activity?.SetTag(QuoteTelemetry.Tags.QuoteIdentifier, identifier);
+            activity?.SetTag(QuoteTelemetry.Tags.ToStatus, target.ToString());
+
+            var quote = await quoteRepository.GetForUpdateAsync(identifier, adviserId, cancellationToken)
+                ?? throw new NotFoundException($"Quote {identifier} was not found");
+
+            var current = quote.Status;
+            activity?.SetTag(QuoteTelemetry.Tags.FromStatus, current.ToString());
+            activity?.SetTag(QuoteTelemetry.Tags.QuoteReference, quote.Reference);
+
+            QuoteStatusMachine.EnsureCanMove(current, target);
+
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+            quote.Status = target;
+            quote.UpdatedAt = now;
+
+            // Id is left empty so EF sees a new row and generates the key on insert
+            quote.StatusHistory.Add(new QuoteStatusChange
+            {
+                QuoteId = quote.Id,
+                FromStatus = current,
+                ToStatus = target,
+                Reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim(),
+                ChangedBy = adviserId,
+                ChangedAt = now
+            });
+
+            await quoteRepository.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Quote {QuoteIdentifier} ({QuoteReference}) moved from {FromStatus} to {ToStatus} by adviser {AdviserId}",
+                quote.Identifier, quote.Reference, current, target, adviserId);
+            return quote;
+        }
 
         private PremiumResult Price(CreateQuoteRequest request, string productCode, DateOnly quoteDate)
         {

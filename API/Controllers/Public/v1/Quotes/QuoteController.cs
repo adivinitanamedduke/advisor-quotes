@@ -61,6 +61,25 @@ namespace API.Controllers.Public.v1.Quotes
             return quote is null ? QuoteNotFound(identifier) : Ok(quote.ToDto());
         }
 
+        /// <summary>
+        /// Moves a quote to a new status and records the change in its history.
+        /// Allowed: Draft to SentToClient or Declined; SentToClient to Accepted or Declined.
+        /// </summary>
+        [HttpPut("{identifier:guid}/status")]
+        [ProducesResponseType(typeof(QuoteDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateStatusAsync(
+            Guid identifier,
+            [FromBody] UpdateQuoteStatusRequest request,
+            CancellationToken cancellationToken)
+        {
+            var quote = await quoteService.UpdateQuoteStatusAsync(identifier, request, AdviserId, cancellationToken);
+            return Ok(quote.ToDto());
+        }
+
         // Same ErrorResponse body as every other error, so clients parse one shape
         private NotFoundObjectResult QuoteNotFound(Guid identifier) => NotFound(new ErrorResponse
         {
