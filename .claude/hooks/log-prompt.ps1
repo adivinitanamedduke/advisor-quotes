@@ -20,6 +20,7 @@ try {
     $prompt = [regex]::Replace($prompt, '(?s)<system-reminder>.*?</system-reminder>', '')
     $prompt = [regex]::Replace($prompt, '(?s)<task-notification>.*?</task-notification>', '')
     $prompt = [regex]::Replace($prompt, '(?m)^Shared notes folder for this group of sessions.*$', '')
+    $prompt = [regex]::Replace($prompt, '</?cross-session-message[^>]*>', '')
     $prompt = $prompt.Trim()
     if (-not $prompt) { exit 0 }
 
