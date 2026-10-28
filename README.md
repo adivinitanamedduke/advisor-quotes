@@ -90,6 +90,7 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - The UI runs on its own origin (`http://localhost:5173`) and calls the API directly, so the API allows CORS from it and exposes `Idempotent-Replayed`.
 - The UI issues one `Idempotency-Key` per submission and reuses it while the form body is unchanged, so retries and double clicks replay rather than duplicate.
 - The UI does no rule validation of its own; it shows the API's `ErrorResponse.errors` next to the matching field, or in a summary.
+- The UI mirrors the status transitions above to choose which buttons to show; the API remains the authority.
 
 ## What I'd do with more time
 

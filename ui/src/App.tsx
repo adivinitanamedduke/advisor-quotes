@@ -4,6 +4,7 @@ import { useAdviserId } from './adviser/useAdviserId'
 import { ApiContext } from './api/ApiContext'
 import { createApiClient, DEFAULT_API_BASE_URL } from './api/client'
 import { CreateQuote } from './quotes/CreateQuote'
+import { QuoteDetail } from './quotes/QuoteDetail'
 import { QuoteList } from './quotes/QuoteList'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
@@ -16,6 +17,7 @@ export function App() {
   const api = useMemo(() => createApiClient({ baseUrl, adviserId }), [adviserId])
 
   const showList = () => setView({ name: 'list' })
+  const showQuote = (identifier: string) => setView({ name: 'detail', identifier })
 
   return (
     <ApiContext.Provider value={api}>
@@ -23,17 +25,12 @@ export function App() {
       <main>
         {!adviserId ? (
           <p className="notice">Enter your adviser id above to see and create quotes.</p>
-        ) : view.name === 'list' ? (
-          <QuoteList
-            onOpen={(identifier) => setView({ name: 'detail', identifier })}
-            onCreate={() => setView({ name: 'create' })}
-          />
         ) : view.name === 'create' ? (
-          <CreateQuote onOpen={(identifier) => setView({ name: 'detail', identifier })} onCancel={showList} />
+          <CreateQuote onOpen={showQuote} onCancel={showList} />
+        ) : view.name === 'detail' ? (
+          <QuoteDetail identifier={view.identifier} onBack={showList} />
         ) : (
-          <button type="button" className="link" onClick={showList}>
-            ← Back to quotes
-          </button>
+          <QuoteList onOpen={showQuote} onCreate={() => setView({ name: 'create' })} />
         )}
       </main>
     </ApiContext.Provider>
