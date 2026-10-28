@@ -64,4 +64,6 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 
 > Each flow must be validated and unit tested.
 
+> Ensure no claud related text in commits
+
 ## Automatic entries
