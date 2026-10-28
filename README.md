@@ -73,6 +73,7 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Status flow: Draft → SentToClient or Declined; SentToClient → Accepted or Declined; Accepted and Declined are final.
 - Duplicate window is 10 minutes (configurable).
 - Without an `Idempotency-Key`, a duplicate is the same adviser, client, product and notes, ignoring case and extra spaces.
+- An identical body inside the window is a replay even when it carries a new `Idempotency-Key`.
 - Rule breaches are 400; 409 only for idempotency-key mismatches and concurrent updates.
 - Products and rates are illustrative configuration, not real actuarial tables.
 - Integration tests run against `TEST_POSTGRES_CONNECTION`, or Testcontainers when Docker is present.

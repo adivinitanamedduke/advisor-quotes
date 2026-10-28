@@ -1,16 +1,36 @@
+using Business.Abstractions.Config;
+using Business.Abstractions.Domain.Quotes;
 using Business.Abstractions.Exceptions;
 using Business.Abstractions.Interfaces.Repository.Quotes;
 using Business.Services.Quotes;
+using Contracts.API.Public.Quotes.Requests.Validators;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
+using Pricing;
 
 namespace Tests.Unit.Business.Services.Quotes
 {
+    /// <summary>Shared setup and the get quote tests; each other flow has its own partial file.</summary>
     public partial class QuoteServiceTests
     {
-        private readonly Mock<IQuoteRepository> _repository = new(MockBehavior.Strict);
+        private const int WindowMinutes = 10;
 
-        private QuoteService CreateService() => new(_repository.Object, NullLogger<QuoteService>.Instance);
+        private readonly Mock<IQuoteRepository> _repository = new(MockBehavior.Strict);
+        private readonly Mock<IPremiumCalculator> _calculator = new(MockBehavior.Strict);
+
+        private QuoteService CreateService() => new(
+            _repository.Object,
+            _calculator.Object,
+            new CreateQuoteRequestValidator(),
+            Options.Create(new IdempotencyOptions { WindowMinutes = WindowMinutes }),
+            new FixedTimeProvider(QuoteTestData.Now),
+            NullLogger<QuoteService>.Instance);
+
+        private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
+        {
+            public override DateTimeOffset GetUtcNow() => new(utcNow, TimeSpan.Zero);
+        }
 
         [Fact]
         public async Task GetQuoteAsync_WhenQuoteExists_ReturnsIt()
@@ -34,7 +54,7 @@ namespace Tests.Unit.Business.Services.Quotes
             // Arrange
             _repository
                 .Setup(r => r.GetByIdentifierAsync(It.IsAny<Guid>(), QuoteTestData.AdviserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((global::Business.Abstractions.Domain.Quotes.Quote?)null);
+                .ReturnsAsync((Quote?)null);
 
             // Act
             var result = await CreateService().GetQuoteAsync(Guid.NewGuid(), QuoteTestData.AdviserId);

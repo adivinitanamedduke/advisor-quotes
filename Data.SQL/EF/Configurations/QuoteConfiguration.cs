@@ -20,7 +20,9 @@ namespace Data.SQL.EF.Configurations
             builder.Property(e => e.Reference)
                 .HasMaxLength(20)
                 .HasDefaultValueSql($"'QT-' || lpad(nextval('{QuotesDbContext.ReferenceSequence}')::text, 6, '0')")
-                .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd()
+                // Quote.Reference starts as "" not null, so tell EF that "" means unset and the default applies
+                .HasSentinel(string.Empty);
             builder.HasIndex(e => e.Reference).IsUnique();
 
             builder.Property(e => e.AdviserId).HasMaxLength(100).IsRequired();
