@@ -28,6 +28,25 @@ namespace Tests.Unit.API.Observability
             Assert.Equal(expected, result);
         }
 
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("false", false)]
+        [InlineData("true", true)]
+        [InlineData("True", true)]
+        public void UseConsoleMetrics_WithSetting_ReturnsWhetherEnabled(string? value, bool expected)
+        {
+            // Arrange
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { [ObservabilityServiceCollection.ConsoleMetricsKey] = value })
+                .Build();
+
+            // Act
+            var result = ObservabilityServiceCollection.UseConsoleMetrics(configuration);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void AddObservability_WhenBuilt_ListensToQuoteActivitySource()
         {

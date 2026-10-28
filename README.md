@@ -67,7 +67,7 @@ Every response carries an `X-Trace-Id` header (errors included). The same id is 
    ```
    Open http://localhost:16686, paste the trace id into "Lookup by Trace ID" (or pick service `advisor-quotes-api`). A quote create shows the HTTP span, then `quote.create`, `quote.duplicate_check`, `pricing.calculate` and one `postgresql` span per SQL command; a status change shows `quote.status_change`.
 
-Health probes are logged at Debug so they do not drown real traffic. When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, metrics go to the same endpoint (Jaeger ignores them; a full OpenTelemetry collector keeps them).
+Health probes are logged at Debug so they do not drown real traffic. Metrics are not printed by default; set `Observability__ConsoleMetrics=true` to dump them to the console every minute. When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, metrics go to that endpoint instead (Jaeger ignores them; a full OpenTelemetry collector keeps them).
 
 ### Tests
 

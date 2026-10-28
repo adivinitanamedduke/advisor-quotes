@@ -14,6 +14,7 @@ namespace API.Observability
         public const string ServiceName = "advisor-quotes-api";
         public const string OtlpEndpointKey = "OTEL_EXPORTER_OTLP_ENDPOINT";
         public const string LogFormatKey = "Observability:LogFormat";
+        public const string ConsoleMetricsKey = "Observability:ConsoleMetrics";
 
         private const string TextLogTemplate =
             "[{Timestamp:HH:mm:ss} {Level:u3}] {TraceId} {SourceContext}: {Message:lj}{NewLine}{Exception}";
@@ -47,6 +48,10 @@ namespace API.Observability
         public static bool UseOtlpExporter(IConfiguration configuration) =>
             !string.IsNullOrWhiteSpace(configuration[OtlpEndpointKey]);
 
+        /// <summary>Metrics are dumped to the console every minute, so only when asked for (Observability:ConsoleMetrics).</summary>
+        public static bool UseConsoleMetrics(IConfiguration configuration) =>
+            configuration.GetValue<bool>(ConsoleMetricsKey);
+
         /// <summary>Compact JSON unless Observability:LogFormat is "text" (easier to read while developing).</summary>
         public static bool UseTextLogs(IConfiguration configuration) =>
             string.Equals(configuration[LogFormatKey], "text", StringComparison.OrdinalIgnoreCase);
@@ -67,6 +72,7 @@ namespace API.Observability
         private static void AddTracingAndMetrics(this WebApplicationBuilder builder)
         {
             var useOtlp = UseOtlpExporter(builder.Configuration);
+            var useConsoleMetrics = UseConsoleMetrics(builder.Configuration);
 
             builder.Services
                 .AddOpenTelemetry()
@@ -100,7 +106,7 @@ namespace API.Observability
                     {
                         metrics.AddOtlpExporter();
                     }
-                    else
+                    else if (useConsoleMetrics)
                     {
                         metrics.AddConsoleExporter();
                     }
