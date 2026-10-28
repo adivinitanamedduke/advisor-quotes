@@ -66,4 +66,18 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 
 > Ensure no claud related text in commits
 
+### 2026-10-28 | phase 0 | GitHub remote
+
+> I've signed in to GitHub in the browser window the extension controls. Create the private repo adivinitanamedduke/advisor-quotes and push main.
+
+> I'm logged in in the chrome nrowser
+
+> I created the empty private repo in Chrome; here is the URL:
+
+> Give me a good short description to use for the repo
+
+> repo created
+
+> https://github.com/adivinitanamedduke/advisor-quotes
+
 ## Automatic entries
