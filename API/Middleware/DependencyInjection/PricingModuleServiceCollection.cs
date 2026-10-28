@@ -8,7 +8,9 @@ namespace API.Middleware.DependencyInjection
         {
             services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
 
-            // Pricing engine session registers IProductCatalog and IPremiumCalculator here
+            // Both are stateless and read options once, so one instance serves every request
+            services.AddSingleton<IProductCatalog, ProductCatalog>();
+            services.AddSingleton<IPremiumCalculator, PremiumCalculator>();
 
             return services;
         }
