@@ -38,6 +38,18 @@ dotnet test Tests.Unit
 dotnet test Tests.Integration   # needs TEST_POSTGRES_CONNECTION or Docker
 ```
 
+### UI (optional)
+
+With the API running:
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and enter an adviser id in the header bar. The API URL defaults to `http://localhost:5222` (override with `VITE_API_BASE_URL`). `npm test`, `npm run lint` and `npm run build` check it. Details: [ui/README.md](ui/README.md).
+
 ## Approach
 
 Layered service with explicit project boundaries:
@@ -75,6 +87,8 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Rule breaches are 400; 409 only for idempotency-key mismatches and concurrent updates.
 - Products and rates are illustrative configuration, not real actuarial tables.
 - Integration tests run against `TEST_POSTGRES_CONNECTION`, or Testcontainers when Docker is present.
+- The UI runs on its own origin (`http://localhost:5173`) and calls the API directly, so the API allows CORS from it and exposes `Idempotent-Replayed`.
+- The UI issues one `Idempotency-Key` per submission and reuses it while the form body is unchanged, so retries and double clicks replay rather than duplicate.
 
 ## What I'd do with more time
 
