@@ -97,6 +97,30 @@ describe('CreateQuote', () => {
     expect(screen.getByText('Client full name is required')).toHaveClass('field-error')
   })
 
+  // Property paths exactly as CreateQuoteRequestValidator reports them.
+  it.each([
+    ['Client.FullName', /client full name/i],
+    ['Client.DateOfBirth', /date of birth/i],
+    ['Product.Code', /product/i],
+    ['Product.CoverAmount', /cover amount/i],
+    ['Product.TermYears', /term \(years\)/i],
+    ['Notes', /notes/i],
+  ])('Submit_ValidatorField_%s_ShowsErrorOnItsInput', async (field, label) => {
+    // Arrange
+    const message = `${field} is wrong`
+    const createQuote = vi.fn().mockRejectedValue(
+      new ApiError(400, 'Validation failed', { statusCode: 400, message: 'Validation failed', errors: [{ field, message }] }),
+    )
+    await renderForm(createQuote)
+
+    // Act
+    await submit()
+
+    // Assert
+    expect(await screen.findByRole('alert')).not.toHaveTextContent(message)
+    expect(screen.getByLabelText(label).closest('label')).toHaveTextContent(message)
+  })
+
   it('Submit_RetryAfterNetworkError_ReusesIdempotencyKey', async () => {
     // Arrange
     const createQuote = vi
