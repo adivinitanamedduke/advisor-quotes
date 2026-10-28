@@ -117,6 +117,21 @@ npm run dev
 
 Open `http://localhost:5173` and enter an adviser id in the header bar (applied on Enter or blur). The API URL defaults to `http://localhost:5222` (override with `VITE_API_BASE_URL`). `npm test`, `npm run lint` and `npm run build` check it. Details: [ui/README.md](ui/README.md).
 
+### Browser end-to-end tests
+
+Playwright drives the installed Chrome through the real UI, API and PostgreSQL. It starts the API and the dev server itself (or reuses ones already running) and records a video of every test into `ui/test-results/`:
+
+```bash
+cd ui
+npx playwright install ffmpeg   # once, for video recording
+npm run e2e
+```
+
+`ConnectionStrings__Quotes` must be set, as for running the API. `E2E_VIDEO=off` skips recording, and `E2E_BROWSER_CHANNEL=msedge` uses Edge. The two journeys are:
+
+- creating a quote, resubmitting it (the duplicate notice), and moving it Draft → Sent to client → Accepted with its history;
+- a rejected submission showing the server's field errors and trace id.
+
 ## Approach
 
 Layered service with explicit project boundaries:

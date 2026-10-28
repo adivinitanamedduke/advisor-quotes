@@ -26,6 +26,7 @@ The UI calls the API from another origin, so the API must allow CORS from `http:
 | `npm run build` | Type check and production build into `dist/` |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest + Testing Library, once |
+| `npm run e2e` | Playwright browser tests against the real API and database, with a video per test in `test-results/` (see the root README) |
 
 ## Layout
 
