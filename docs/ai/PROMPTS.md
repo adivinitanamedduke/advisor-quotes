@@ -298,3 +298,5 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > - Keep the order: status machine, fingerprint, get, create, search, status change, metrics, integration tests.
 > 
 > Keep short precise subjects, the repo's local author identity, and no attribution text. Check every commit builds and passes Tests.Unit in a throwaway worktree, and that Tests.Integration passes on the tip. Confirm `git diff claude/quote-lifecycle-83ab1f claude/quote-lifecycle-clean` is empty. Push the new branch normally, with no force. Reply with the final commit list and the per-commit test counts.
+
+> Merge commits named after claude/* branches: rewrite and force-push main, delete the claude/* branches on GitHub. Download ffmpeg for video: yes.
