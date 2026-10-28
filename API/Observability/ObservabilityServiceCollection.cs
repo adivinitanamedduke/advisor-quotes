@@ -32,6 +32,8 @@ namespace API.Observability
 
         public static WebApplication UseObservability(this WebApplication app)
         {
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
+
             // One line per request: method, path, status, elapsed, plus TraceId from the enricher
             app.UseSerilogRequestLogging(options => options.GetLevel = RequestLogLevel);
 
