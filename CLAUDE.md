@@ -42,7 +42,7 @@ HTTP → Controller (API) → Service (Business) → Repository (Data.SQL) → Q
 | Code | When | How |
 |---|---|---|
 | 200 | Get, search, update returning the DTO; idempotent replay of a create | `Ok(...)` (+ `Idempotent-Replayed: true` header on replay) |
-| 201 | Create | `CreatedAtRoute("GetQuote", new { version = "1.0", identifier }, dto)` |
+| 201 | Create | `CreatedAtRoute("GetQuote", new { version = "1", identifier }, dto)` (gives `/api/v1/...`, see D-12) |
 | 400 | Validation failure, missing `X-Adviser-Id`, business rule breach (bad transition, product limits) | throw `BadRequestException` |
 | 404 | Unknown identifier, or one owned by another adviser (never 403) | `NotFound()` on a null get, else throw `NotFoundException` |
 | 409 | Idempotency-Key reused with a different body; optimistic concurrency clash | throw `ConflictException` |

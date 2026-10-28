@@ -39,8 +39,9 @@ builder.Services
 builder.Services
     .AddApiVersioning(options =>
     {
+        // Every controller declares its version and every route carries it (api/v1/...), so read it from the URL only
         options.DefaultApiVersion = new ApiVersion(1, 0);
-        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
         options.ReportApiVersions = true;
     })
     .AddMvc()
