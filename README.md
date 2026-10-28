@@ -74,6 +74,8 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Duplicate window is 10 minutes (configurable).
 - Rule breaches are 400; 409 only for idempotency-key mismatches and concurrent updates.
 - Products and rates are illustrative configuration, not real actuarial tables.
+- Age is completed years on the quote date, priced in five bands (under 30 × 0.80 up to 60+ × 4.00); term adds 1% per year above 10 years.
+- Product limits are inclusive; product codes are case-insensitive.
 - Integration tests run against `TEST_POSTGRES_CONNECTION`, or Testcontainers when Docker is present.
 
 ## What I'd do with more time

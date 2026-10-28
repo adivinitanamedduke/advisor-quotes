@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Pricing;
 
 namespace API.Middleware.DependencyInjection
@@ -6,9 +7,15 @@ namespace API.Middleware.DependencyInjection
     {
         public static IServiceCollection AddPricingModule(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
+            // A broken catalogue stops the API at startup rather than failing the first quote
+            services.AddOptions<PricingOptions>()
+                .Bind(configuration.GetSection(PricingOptions.SectionName))
+                .ValidateOnStart();
+            services.AddSingleton<IValidateOptions<PricingOptions>, PricingOptionsValidator>();
 
-            // Pricing engine session registers IProductCatalog and IPremiumCalculator here
+            // Both are stateless and read options once, so one instance serves every request
+            services.AddSingleton<IProductCatalog, ProductCatalog>();
+            services.AddSingleton<IPremiumCalculator, PremiumCalculator>();
 
             return services;
         }
