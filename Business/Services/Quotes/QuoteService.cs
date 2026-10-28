@@ -64,6 +64,7 @@ namespace Business.Services.Quotes
             if (stored.Identifier == candidate.Identifier)
             {
                 activity?.SetTag(QuoteTelemetry.Tags.IdempotencyOutcome, OutcomeCreated);
+                QuoteMetrics.RecordCreated(productCode);
                 logger.LogInformation(
                     "Created quote {QuoteIdentifier} ({QuoteReference}) for adviser {AdviserId}, product {ProductCode}, premium {MonthlyPremium} {Currency}",
                     stored.Identifier, stored.Reference, adviserId, productCode, stored.MonthlyPremium, stored.Currency);
@@ -77,6 +78,7 @@ namespace Business.Services.Quotes
             {
                 activity?.SetTag(QuoteTelemetry.Tags.IdempotencyOutcome, OutcomeConflict);
                 activity?.SetStatus(ActivityStatusCode.Error, OutcomeConflict);
+                QuoteMetrics.RecordConflict(productCode);
                 logger.LogWarning(
                     "Idempotency key reused with a different body by adviser {AdviserId}; existing quote {QuoteIdentifier}",
                     adviserId, stored.Identifier);
@@ -85,6 +87,7 @@ namespace Business.Services.Quotes
             }
 
             activity?.SetTag(QuoteTelemetry.Tags.IdempotencyOutcome, OutcomeReplayed);
+            QuoteMetrics.RecordReplayed(productCode);
             logger.LogInformation(
                 "Duplicate submission by adviser {AdviserId} replayed existing quote {QuoteIdentifier} ({QuoteReference})",
                 adviserId, stored.Identifier, stored.Reference);
@@ -163,6 +166,7 @@ namespace Business.Services.Quotes
             });
 
             await quoteRepository.SaveChangesAsync(cancellationToken);
+            QuoteMetrics.RecordStatusChange(quote.ProductCode, target.ToString());
 
             logger.LogInformation(
                 "Quote {QuoteIdentifier} ({QuoteReference}) moved from {FromStatus} to {ToStatus} by adviser {AdviserId}",
