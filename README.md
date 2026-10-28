@@ -2,7 +2,7 @@
 
 A small, runnable slice of an adviser-facing quoting capability: an adviser captures a quote for a client, the service calculates and stores a premium, and the adviser views quotes and moves them through their lifecycle. Built with C# / .NET 10 and PostgreSQL.
 
-> **Status:** in progress. Phase 0 (scaffold, contracts, schema) is done. Pricing, quote lifecycle, observability and the React UI are being built next. This README is updated as each piece lands.
+Design, AWS plan, AI usage and where an LLM could fit: [SOLUTION.md](SOLUTION.md).
 
 ## How to run it
 
@@ -72,7 +72,7 @@ Every response carries an `X-Trace-Id` header (errors included). The same id is 
        adviser.id: adv-1
        product.code: TERM_LIFE
        quote.reference: QT-000123
-       quote.premium: 850.00
+       quote.premium: 1402.50
        idempotency.outcome: created
    ```
    For a create you will see `POST /api/v1/Quote` (the HTTP span), `quote.create`, `quote.duplicate_check`, `pricing.calculate` and one `postgresql` span per SQL command, all with that trace id.
@@ -105,6 +105,7 @@ Integration tests run the real API (`WebApplicationFactory`) against PostgreSQL 
    ```
 2. Otherwise a `postgres:16-alpine` Testcontainer, when Docker is running.
 3. Otherwise every integration test is reported as skipped, with the reason.
+
 ### UI (optional)
 
 With the API running:
@@ -150,11 +151,13 @@ Request flow details: [docs/data-flows.md](docs/data-flows.md).
 
 ## Key decisions and trade-offs
 
-_Top 3 to 5 decisions, finalised at the end. Full running log: [docs/DECISIONS.md](docs/DECISIONS.md)._
+Full log with alternatives: [docs/DECISIONS.md](docs/DECISIONS.md). Reasoning: [SOLUTION.md](SOLUTION.md).
 
-1. **Duplicate submissions** — honour an `Idempotency-Key` header; without one, treat an identical submission from the same adviser within 10 minutes as a replay. Replays return 200 with the original quote. Trade-off: a deliberate identical re-quote within the window is not created.
-2. **Correctness in the database** — a unique index on the idempotency key and a transaction-scoped lock on the payload fingerprint make concurrent double clicks safe across instances.
-3. **Pricing as a separate project** — no reference to quotes, so it can be extracted behind an HTTP/queue boundary later; every stored premium keeps its pricing version and factors.
+1. **Duplicate submissions: key plus fingerprint.** Honour an `Idempotency-Key` header; without one, an identical submission from the same adviser within 10 minutes is a replay. Replays return 200 with the original quote; the same key with a different body is 409. *Considered:* key only (clients that forget it still duplicate), or a unique constraint on business fields (blocks legitimate re-quotes forever). *Trade-off:* a deliberate identical re-quote inside the window returns the existing one.
+2. **Correctness in the database, not in memory.** A unique index on the idempotency key plus a transaction-scoped advisory lock on the fingerprint make concurrent double clicks safe across any number of API instances; `xmin` turns concurrent status changes into a 409. *Considered:* in-process locks (break with two instances), or serialisable isolation (retries everywhere). *Trade-off:* one small raw SQL call in an otherwise LINQ repository.
+3. **History in the same transaction as the change.** Each status change writes its history row atomically with the quote update, so the audit can never disagree with the current status. *Considered:* event sourcing (too heavy here), or JSON history on the quote (hard to query). *Trade-off:* two writes per change.
+4. **Pricing isolated and explainable.** Pricing is its own project with no reference to quotes; every stored premium keeps its pricing version and the factors used. *Considered:* calculating inside the quote service, or recalculating on read. *Trade-off:* a little more structure now, for an easy split into a pricing service later.
+5. **One trace id as the runtime signal.** OpenTelemetry spans and JSON logs share the trace id, returned as `X-Trace-Id` on every response and shown in the UI on errors. *Considered:* a custom correlation id in logs only. *Trade-off:* a few OpenTelemetry packages; exporters change per environment with no code change.
 
 ## Assumptions
 
@@ -180,8 +183,42 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 
 ## What I'd do with more time
 
-_To be completed._
+**Gaps**
+- **Real authentication.** Replace the `X-Adviser-Id` header with a JWT claim from the corporate IdP. Services already take the adviser id as a parameter, so this is a base-controller change.
+- **Pricing.** Move the age bands and term slope from code into versioned rate tables, and validate them with actuaries; today's numbers are illustrative.
+- **Status rules in one place.** The UI mirrors the transition table to choose its buttons. The API should return `allowedNextStatuses` on each quote so the two can't drift.
+- **Idempotency housekeeping.** Expire old keys and fingerprints with a scheduled job; today they sit on the quote row forever.
+- **Jaeger.** The OTLP/Jaeger path is configured but untested here (no Docker on this machine); console exporters were verified instead.
+
+**Improvements**
+- Run the integration and browser tests in CI against a Postgres service container on every pull request.
+- Add contract tests between the UI client and the API (for example by generating the TypeScript types from OpenAPI) instead of a hand-mirrored client.
+- Add an outbox for `QuoteCreated` and `QuoteStatusChanged` events, so CRM sync and client notifications don't couple to the API.
+
+**At scale**
+- Extract pricing as its own service, behind the existing `IPremiumCalculator` seam, with timeouts and retries.
+- Add read replicas or a read model for search, cursor-based paging, and partitioning of the history table by month.
+- Make the dedupe window configurable per channel, plus rate limiting per adviser, and alerts on 5xx rate, latency and conflicts (the counters already exist).
+
+The AWS hosting plan is in [SOLUTION.md](SOLUTION.md#evolving-and-hosting-it-in-aws).
 
 ## How I used AI
 
-_To be completed. Every prompt is logged in [docs/ai/PROMPTS.md](docs/ai/PROMPTS.md)._
+- **Tools.** Claude Code: one coordinating session, plus four parallel sessions (pricing, quote lifecycle, observability, React UI), each on its own branch. Every prompt, including each sub-session brief, is logged in [docs/ai/PROMPTS.md](docs/ai/PROMPTS.md).
+- **What I used it for.** Turning the brief into a requirements matrix and plan; scaffolding; implementing each flow with its tests; Playwright browser tests; drafting these docs.
+- **Decisions that were mine.**
+  - Duplicate handling (key plus fingerprint), the runtime signal, which optional extras to build, and the layered structure and status codes.
+  - One validated, unit-tested commit per flow.
+  - No AI attribution in commits.
+  - Running on a native PostgreSQL instead of installing Docker.
+- **Where I corrected or rejected output.**
+  - Had sessions rebuild their branches so each commit stands on its own, instead of fixes landing in later commits.
+  - Renamed merge commits that picked up generated branch names.
+  - Rejected the first prompt log, which captured tool noise and local paths.
+  - Fixed tests and docs that described the API wrongly (route names, the example premium).
+- **How I verified it.**
+  - Unit tests on every flow, and integration tests against real PostgreSQL. These caught a bug where quote references weren't generated by the database.
+  - A hand-checked premium (R2 103.75), pinned in a browser test.
+  - Cross-checking each session's claims against the code, which found a duplicate tracing span and clashing assumption IDs.
+  - A trial merge of all branches with every suite run before merging.
+  - Recorded Playwright runs in Chrome.
