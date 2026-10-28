@@ -16,6 +16,13 @@ try {
 
     $prompt = [string]$payload.prompt
 
+    # Keep only what a person (or the coordinating session) wrote: drop harness blocks and local paths
+    $prompt = [regex]::Replace($prompt, '(?s)<system-reminder>.*?</system-reminder>', '')
+    $prompt = [regex]::Replace($prompt, '(?s)<task-notification>.*?</task-notification>', '')
+    $prompt = [regex]::Replace($prompt, '(?m)^Shared notes folder for this group of sessions.*$', '')
+    $prompt = $prompt.Trim()
+    if (-not $prompt) { exit 0 }
+
     # Optional local, gitignored list of terms to mask (one per line)
     $redactions = Join-Path $mainRoot '.claude/hooks/redactions.local.txt'
     if (Test-Path $redactions) {
