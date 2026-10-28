@@ -19,7 +19,7 @@ namespace API.Observability
             "[{Timestamp:HH:mm:ss} {Level:u3}] {TraceId} {SourceContext}: {Message:lj}{NewLine}{Exception}";
 
         /// <summary>
-        /// Tracing and metrics (OpenTelemetry) plus structured logs (Serilog) that share one TraceId.
+        /// Tracing and metrics (OpenTelemetry), structured logs (Serilog) that share one TraceId, and health checks.
         /// Spans and metrics go to the console by default, or to an OTLP collector such as Jaeger
         /// when OTEL_EXPORTER_OTLP_ENDPOINT is set.
         /// </summary>
@@ -27,6 +27,7 @@ namespace API.Observability
         {
             builder.AddTracingAndMetrics();
             builder.AddStructuredLogging();
+            builder.Services.AddHealthEndpoints();
             return builder;
         }
 
@@ -36,6 +37,8 @@ namespace API.Observability
 
             // One line per request: method, path, status, elapsed, plus TraceId from the enricher
             app.UseSerilogRequestLogging(options => options.GetLevel = RequestLogLevel);
+
+            app.MapHealthEndpoints();
 
             return app;
         }

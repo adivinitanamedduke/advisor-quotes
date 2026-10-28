@@ -33,6 +33,13 @@ All configuration can come from environment variables; see [.env.example](.env.e
 
 Logs are compact JSON lines with `TraceId` and `SpanId` by default; set `Observability__LogFormat=text` for readable lines that still show the TraceId.
 
+### Health
+
+- `GET /health/live`: 200 while the process is up.
+- `GET /health/ready`: 200 when PostgreSQL is reachable, 503 when not.
+
+Both return JSON (`{"status":"Healthy","checks":[...]}`) and need no `X-Adviser-Id`.
+
 ### Tests
 
 ```bash
