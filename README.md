@@ -31,6 +31,8 @@ A small, runnable slice of an adviser-facing quoting capability: an adviser capt
 
 All configuration can come from environment variables; see [.env.example](.env.example).
 
+Logs are compact JSON lines with `TraceId` and `SpanId` by default; set `Observability__LogFormat=text` for readable lines that still show the TraceId.
+
 ### Tests
 
 ```bash
