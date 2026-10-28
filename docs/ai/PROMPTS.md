@@ -80,4 +80,12 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 
 > https://github.com/adivinitanamedduke/advisor-quotes
 
+### 2026-10-28 | phase 1 | sessions and local database
+
+> Start all session cards
+
+> I've clicked Trust repository. Restart all four Phase 1 sessions.
+
+> For postgres db password try [two candidate local passwords] one of them should work
+
 ## Automatic entries

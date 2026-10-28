@@ -20,8 +20,9 @@ A small, runnable slice of an adviser-facing quoting capability: an adviser capt
    ```
    Using a local PostgreSQL instead? Create a database (e.g. `advisor_quotes`) and set the connection string:
    ```bash
-   export ConnectionStrings__Quotes="Host=localhost;Port=5432;Database=advisor_quotes;Username=<user>;Password=<password>"
+   export ConnectionStrings__Quotes="Host=127.0.0.1;Port=5432;Database=advisor_quotes;Username=<user>;Password=<password>;SSL Mode=Disable"
    ```
+   The database is created by the first migration if it does not exist. On a native Windows install, use `127.0.0.1` and `SSL Mode=Disable`: `localhost` can try IPv6 and SSL first and time out.
 2. Run the API (applies migrations on startup in Development):
    ```bash
    dotnet run --project API
