@@ -105,6 +105,17 @@ Integration tests run the real API (`WebApplicationFactory`) against PostgreSQL 
    ```
 2. Otherwise a `postgres:16-alpine` Testcontainer, when Docker is running.
 3. Otherwise every integration test is reported as skipped, with the reason.
+### UI (optional)
+
+With the API running:
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and enter an adviser id in the header bar (applied on Enter or blur). The API URL defaults to `http://localhost:5222` (override with `VITE_API_BASE_URL`). `npm test`, `npm run lint` and `npm run build` check it. Details: [ui/README.md](ui/README.md).
 
 ## Approach
 
@@ -147,6 +158,10 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Age is completed years on the quote date, priced in five bands (under 30 × 0.80 up to 60+ × 4.00); term adds 1% per year above 10 years.
 - Product limits are inclusive; product codes are case-insensitive.
 - Integration tests run against `TEST_POSTGRES_CONNECTION`, or Testcontainers when Docker is present.
+- The UI runs on its own origin (`http://localhost:5173`) and calls the API directly, so the API allows CORS from it and exposes `Idempotent-Replayed` and `X-Trace-Id`.
+- The UI issues one `Idempotency-Key` per submission and reuses it while the form body is unchanged, so retries and double clicks replay rather than duplicate.
+- The UI does no rule validation of its own; it shows the API's `ErrorResponse.errors` next to the matching field, or in a summary.
+- The UI mirrors the status transitions above to choose which buttons to show; the API remains the authority.
 
 ## What I'd do with more time
 
