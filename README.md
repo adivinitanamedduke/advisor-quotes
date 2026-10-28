@@ -31,6 +31,65 @@ A small, runnable slice of an adviser-facing quoting capability: an adviser capt
 
 All configuration can come from environment variables; see [.env.example](.env.example).
 
+### Health
+
+- `GET /health/live`: 200 while the process is up.
+- `GET /health/ready`: 200 when PostgreSQL is reachable, 503 when not.
+
+Both return JSON (`{"status":"Healthy","checks":[...]}`) and need no `X-Adviser-Id`.
+
+### Following a request
+
+Every response carries an `X-Trace-Id` header (errors included). The same id is the OpenTelemetry trace id and the `TraceId` property on every log line written while handling that request, so one id links the response, the logs and the spans.
+
+1. Run the API and keep its output in a file:
+   ```bash
+   dotnet run --project API 2>&1 | tee api.log
+   ```
+   Logs are one compact JSON object per line. For readable lines (still with the TraceId) set `Observability__LogFormat=text`.
+2. Create a quote and read the trace id from the response headers (or from the Swagger UI "Response headers" box). `Idempotency-Key` is optional:
+   ```bash
+   curl -i -X POST http://localhost:5222/api/v1/Quote -H "X-Adviser-Id: adv-1" -H "Idempotency-Key: demo-1" -H "Content-Type: application/json" -d '{"client":{"fullName":"Thandi Mokoena","dateOfBirth":"1985-04-12","isSmoker":false},"product":{"code":"TERM_LIFE","coverAmount":1000000,"termYears":20},"notes":"Demo quote"}'
+   ```
+   The response is `201 Created` with the quote (note its `identifier`) and:
+   ```
+   X-Trace-Id: 65c0f870c25bd7f54d5d44240ca9af28
+   ```
+3. Find the logs for that request. Every line written while handling it carries the id as `TraceId` (and `@tr`), ending with the request summary line:
+   ```bash
+   grep 65c0f870c25bd7f54d5d44240ca9af28 api.log
+   ```
+   ```json
+   {"@t":"...","@mt":"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms","@tr":"65c0f870c25bd7f54d5d44240ca9af28","@sp":"a64caef88a18030d","RequestMethod":"POST","RequestPath":"/api/v1/Quote","StatusCode":201,"Elapsed":48.2,"TraceId":"65c0f870c25bd7f54d5d44240ca9af28","SpanId":"a64caef88a18030d",...}
+   ```
+4. See the spans. Without a collector they are printed to the console, one block per span, each starting with the same `Activity.TraceId` (`grep -A14 65c0f870c25bd7f54d5d44240ca9af28 api.log`):
+   ```
+   Activity.TraceId:            65c0f870c25bd7f54d5d44240ca9af28
+   Activity.SpanId:             3f1d0c9a7be24411
+   Activity.ParentSpanId:       a64caef88a18030d
+   Activity.DisplayName:        quote.create
+   Activity.Tags:
+       adviser.id: adv-1
+       product.code: TERM_LIFE
+       quote.reference: QT-000123
+       quote.premium: 850.00
+       idempotency.outcome: created
+   ```
+   For a create you will see `POST /api/v1/Quote` (the HTTP span), `quote.create`, `quote.duplicate_check`, `pricing.calculate` and one `postgresql` span per SQL command, all with that trace id.
+5. Change the quote's status with the `identifier` from step 2. This is a new request, so it gets its own `X-Trace-Id`; repeat steps 3 and 4 with it and look for the `quote.status_change` span (tags `quote.status.from: Draft`, `quote.status.to: SentToClient`):
+   ```bash
+   curl -i -X PUT http://localhost:5222/api/v1/Quote/<identifier>/status -H "X-Adviser-Id: adv-1" -H "Content-Type: application/json" -d '{"status":"SentToClient"}'
+   ```
+6. With Docker, Jaeger gives the timeline view instead of console blocks:
+   ```bash
+   docker compose --profile observability up -d jaeger
+   export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+   dotnet run --project API
+   ```
+   Open http://localhost:16686, paste the trace id into "Lookup by Trace ID" (or pick service `advisor-quotes-api`) to see the same spans nested under the HTTP span.
+
+Health probes are logged at Debug so they do not drown real traffic. Metrics are not printed by default; set `Observability__ConsoleMetrics=true` to dump them to the console every minute. When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, metrics go to that endpoint instead (Jaeger ignores them; a full OpenTelemetry collector keeps them).
+
 ### Tests
 
 ```bash
