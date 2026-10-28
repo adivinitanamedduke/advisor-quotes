@@ -38,6 +38,15 @@ dotnet test Tests.Unit
 dotnet test Tests.Integration   # needs TEST_POSTGRES_CONNECTION or Docker
 ```
 
+Integration tests run the real API (`WebApplicationFactory`) against PostgreSQL with a fixed fake premium calculator. They pick the database in this order:
+
+1. `TEST_POSTGRES_CONNECTION`, pointing at a **disposable** database (it is migrated at start and its quote tables are truncated before every test):
+   ```bash
+   export TEST_POSTGRES_CONNECTION="Host=127.0.0.1;Port=5432;Database=advisor_quotes_tests;Username=<user>;Password=<password>;SSL Mode=Disable"
+   ```
+2. Otherwise a `postgres:16-alpine` Testcontainer, when Docker is running.
+3. Otherwise every integration test is reported as skipped, with the reason.
+
 ## Approach
 
 Layered service with explicit project boundaries:
@@ -72,6 +81,8 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Quotes have an internal id, a public GUID identifier, and a readable reference like `QT-000123`.
 - Status flow: Draft → SentToClient or Declined; SentToClient → Accepted or Declined; Accepted and Declined are final.
 - Duplicate window is 10 minutes (configurable).
+- Without an `Idempotency-Key`, a duplicate is the same adviser, client, product and notes, ignoring case and extra spaces.
+- An identical body inside the window is a replay even when it carries a new `Idempotency-Key`.
 - Rule breaches are 400; 409 only for idempotency-key mismatches and concurrent updates.
 - Products and rates are illustrative configuration, not real actuarial tables.
 - Age is completed years on the quote date, priced in five bands (under 30 × 0.80 up to 60+ × 4.00); term adds 1% per year above 10 years.
