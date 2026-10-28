@@ -52,6 +52,7 @@ builder.Services
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddUiCors(builder.Configuration);
 
 builder.Services
     .AddDataLayer(builder.Configuration)
@@ -63,6 +64,8 @@ var app = builder.Build();
 await app.MigrateIfEnabledAsync();
 
 app.UseObservability();
+
+app.UseCors(CorsServiceCollection.UiPolicy);
 
 if (app.Environment.IsDevelopment())
 {

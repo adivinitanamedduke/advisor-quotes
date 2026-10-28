@@ -158,7 +158,7 @@ Full table with reasoning: [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
 - Age is completed years on the quote date, priced in five bands (under 30 × 0.80 up to 60+ × 4.00); term adds 1% per year above 10 years.
 - Product limits are inclusive; product codes are case-insensitive.
 - Integration tests run against `TEST_POSTGRES_CONNECTION`, or Testcontainers when Docker is present.
-- The UI runs on its own origin (`http://localhost:5173`) and calls the API directly, so the API allows CORS from it and exposes `Idempotent-Replayed` and `X-Trace-Id`.
+- The UI runs on its own origin and calls the API directly; the API allows CORS only from `Cors:UiOrigins` (default `http://localhost:5173`) and exposes `Idempotent-Replayed`, `X-Trace-Id` and `Location`.
 - The UI issues one `Idempotency-Key` per submission and reuses it while the form body is unchanged, so retries and double clicks replay rather than duplicate.
 - The UI does no rule validation of its own; it shows the API's `ErrorResponse.errors` next to the matching field, or in a summary.
 - The UI mirrors the status transitions above to choose which buttons to show; the API remains the authority.
