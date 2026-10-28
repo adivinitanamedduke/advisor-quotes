@@ -1,10 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { ADVISER_STORAGE_KEY } from './adviser/useAdviserId'
 
 describe('App', () => {
+  beforeEach(() => {
+    const emptyPage = { items: [], totalCount: 0, pageNumber: 1, pageSize: 10 }
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(emptyPage), { status: 200 })))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('AdviserInput_Typed_PersistsToLocalStorage', async () => {
     // Arrange
     render(<App />)
