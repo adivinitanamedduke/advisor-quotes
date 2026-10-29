@@ -69,13 +69,25 @@ The signal is the **trace id** (D-09). Every response carries `X-Trace-Id`. The 
 
 The UI shows it on errors. An operator can go from a support ticket ("it failed, trace id …") to every log line and span with one search. Spans go to the console locally, or to any OTLP collector (Jaeger profile in `docker-compose.yml`) when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Counters (`quotes_created_total`, `quotes_replayed_total`, `quotes_conflicts_total`, `quote_status_changes_total`) and `/health/live` and `/health/ready` round it out. Logs and span tags carry no client name or date of birth.
 
+### Front end
+
+The UI in `ui/` is optional in the brief, so I kept it deliberately small: Vite, React 19 and TypeScript, with React and React DOM as the only runtime dependencies.
+
+- **No router, no state library.** Three screens (list, create, detail) are a discriminated union `View` in `App.tsx`. Server data lives in the screen that shows it, loaded through one small `useLoad` hook that ignores responses arriving after a newer request (so fast filter changes can't show stale results). With more screens I'd add React Router for deep links, and TanStack Query for caching, refetching and invalidation after a status change, rather than hand-rolling those.
+- **One typed API client behind context.** `api/client.ts` mirrors the `Contracts` DTOs. It adds `X-Adviser-Id`, parses every error into the same `ErrorResponse`, and reports `Idempotent-Replayed`. Components get it from `ApiContext`, so tests swap in a fake client without mocking `fetch`. The types are hand-mirrored today; generating them from the OpenAPI document is the next step, so the two can't drift.
+- **Idempotency belongs to the form, not the request.** `useIdempotencyKey` issues one key per submission attempt and reuses it while the body is unchanged. A double click or a retry after a network error replays; an edited form is a new quote (A-17).
+- **The server is the only validator.** The form posts with `noValidate` and shows the API's field errors next to the matching input, and anything else in a summary (A-18). The UI never disagrees with the API about a rule, and there is one set of rules to test. The cost is a round trip before the adviser sees a mistake.
+- **Explainable premium.** The detail screen shows each rating factor with a readable label, so an adviser can see why a premium is what it is. The UI mirrors the status transition table to decide which buttons to show (A-19); the API stays the authority, and returning `allowedNextStatuses` would remove the duplication.
+- **Operator path.** Every error message shows the response's `X-Trace-Id`, which links the UI to the logs and spans above.
+- **Testing split.** Vitest and Testing Library check behaviour through roles and labels: status buttons, error mapping, key reuse, adviser input. Playwright checks the whole journey against the real API and database.
+
 ### Testing
 
 | Suite | What it proves | Count |
 |---|---|---|
 | `Tests.Unit` | Validators, pricing (every band edge, rounding, limits), status machine table, fingerprint normalisation, services with mocked repositories (including "invalid input never reaches the repository"), controllers' status codes, exception mapping, telemetry | 200 |
 | `Tests.Integration` | The real API (`WebApplicationFactory`) on real PostgreSQL: create, replay, 409, parallel double submit, concurrency 409, transitions and history, adviser scoping, health, CORS | 23 |
-| `ui` (Vitest) | Status buttons, error display with field paths, idempotency key reuse, adviser input | 51 |
+| `ui` (Vitest) | Status buttons, error display with field paths, idempotency key reuse, adviser input, rating factor labels | 52 |
 | `ui/e2e` (Playwright) | The full journey in Chrome against the real UI, API and database, with a video per run | 2 |
 
 Integration tests use a disposable database from `TEST_POSTGRES_CONNECTION`, fall back to Testcontainers when Docker is present, and otherwise skip with a reason. The machine this was built on has no Docker.
@@ -100,7 +112,20 @@ Integration tests use a disposable database from `TEST_POSTGRES_CONNECTION`, fal
 
 ## How I used AI tools, and how I validated the output
 
-I used **Claude Code** as a pair programmer, and as a coordinator of parallel sessions. Every prompt I sent is logged in [docs/ai/PROMPTS.md](docs/ai/PROMPTS.md), automatically by a hook, including the briefs the coordinating session sent to each sub-session.
+I used **Claude Code** as a pair programmer, and as a coordinator of parallel sessions. Every prompt used to build the solution is logged in [docs/ai/PROMPTS.md](docs/ai/PROMPTS.md), automatically by a hook. That includes the briefs the coordinating session drafted for each sub-session, which I approved before they were sent. A final review session on the docs is summarised there rather than quoted.
+
+**Key prompts, and why I sent them**
+
+| Prompt (abridged) | Why |
+|---|---|
+| "Gather all requirements from the documents… Keep track of assumptions… document the list of prompts" | Start from a requirements matrix, and make assumptions and prompts a running record, not something reconstructed at the end. |
+| "Duplicate handling: Idempotency-Key header + payload fingerprint window. Runtime signal: OpenTelemetry traces + correlated structured logs" | My answers to the plan's open questions. These are the two design calls the brief leaves most open. |
+| "a flow like endpoint->service-repository-EF-Data must have a commit with short precise description… Each flow must be validated and unit tested" | Made reviewable, test-backed increments a rule every session had to follow (`CLAUDE.md`). |
+| "Completeness audit… one line per item, Done / Partial / Not done, with evidence" | Made each session prove its work against its own brief with file paths and test names, rather than a summary I'd have to take on trust. |
+| "I don't just want a report back. If any of them have outstanding tasks each must complete" | Turned the audit into fixes before merging, not a list of known gaps. |
+| "Build a corrected copy of your history on a NEW branch… confirm the diff is empty" | Every commit builds and passes on its own, without rewriting the original branches. |
+| "I added same quote but did not get the 409" | Manual testing in the browser; see below. |
+| "the factor names don't look correct for user… map it to readable values" | A UX check on a screen the tests passed but a person would find confusing. |
 
 **How the work was split**
 1. **Planning.** Claude read the brief and the prep guide and proposed a requirements matrix and solution. I made the key decisions: duplicate handling via key + fingerprint, traces + correlated logs as the signal, which optional extras, and the repo layout and conventions.
@@ -114,11 +139,12 @@ I used **Claude Code** as a pair programmer, and as a coordinator of parallel se
 - The coordinating session cross-checked the sessions' claims against the code rather than taking their reports at face value. That found a duplicate `pricing.calculate` span that neither session had noticed, and clashing assumption IDs between branches.
 - Before merging, I trial-merged all branches in a scratch worktree and ran every suite there. I also checked that EF reported no pending model changes.
 - Browser tests in real Chrome, with video, prove the UI, API and database work together.
+- I also used the app by hand. Resubmitting an identical quote gave me a 200 replay, not the 409 I half expected. Checking the database and the code confirmed that's the designed behaviour: an identical body inside the window is a replay (A-15), and 409 is only for a key reused with a *different* body. I also had it map the brief's persistence task (migrations, environment configuration) to the code, as a requirements check before recording.
 
 **Where I corrected or rejected the output**
 - I asked for **one commit per vertical flow** (endpoint → service → repository → EF), each validated and unit tested, instead of large commits. Where sessions had fixed things in later commits, I had them rebuild clean branches so every commit stands on its own.
-- I required that **no commit carry AI attribution**, and had merge commits renamed when they picked up generated branch names.
-- I kept a separate work identity out of the history, and kept references to other internal codebases out of the repo and the prompt log.
+- Commit messages describe the change only. AI use is disclosed in full here and in the prompt log, rather than in per-commit trailers. Merge commits are named after the work (`Merge pricing engine`), not after generated branch names.
+- I kept references to another company's private codebase out of the repo and the prompt log (see the note at the top of the log).
 - I chose not to install Docker on this machine; the tests and setup adapt to a native PostgreSQL instead.
 - The tests found several of the generated defects above. I treat AI output as a draft I have to be able to explain line by line.
 

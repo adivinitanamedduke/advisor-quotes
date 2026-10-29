@@ -487,3 +487,6 @@ $RECYCLE.BIN/
 .env
 ui/node_modules/
 ui/dist/
+
+# Personal demo video notes
+docs/demo-notes.md

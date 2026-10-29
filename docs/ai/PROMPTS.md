@@ -1,6 +1,12 @@
 # Prompt log
 
-Every prompt sent to Claude Code while building this project, in order. Appended automatically by `.claude/hooks/log-prompt.ps1` (UserPromptSubmit hook) from every session, including parallel worktree sessions. Entries before the hook existed were back-filled by hand. References to internal codebases outside this project are masked as `[internal reference]`.
+Every prompt sent to Claude Code while building this project, in order. Appended automatically by `.claude/hooks/log-prompt.ps1` (UserPromptSubmit hook) from every session, including parallel worktree sessions. Entries before the hook existed were back-filled by hand.
+
+How to read it:
+
+- **Who wrote what.** Entries under a `branch claude/...` heading that start with "Background (from the session that started this one)" are briefs to the parallel sessions. The coordinating session drafted them from the plan, and I reviewed and approved each one before it was sent. Entries marked "coordinating session" are my own prompts to that session. Everything else is mine.
+- **`[internal reference]`** is a private codebase from my current role. I asked Claude to follow its conventions (controller layout, status codes, data-flow docs), and no code from it was copied. The name is masked because it isn't mine to publish.
+- **Typos are left as typed.** The prompts are verbatim.
 
 ## Planning session (back-filled)
 
@@ -227,6 +233,8 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > Keep it under 40 lines.
 > 
 
+### 2026-10-28 | coordinating session
+
 > Check with each session that all that was set out by each was completed
 
 ### 2026-10-28 21:00 | branch `claude/pricing-engine-f31370` | session `1cdcc646`
@@ -247,6 +255,8 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > 4. Renumber your assumptions A-21..A-24 to A-16..A-19 in `docs/ASSUMPTIONS.md` and in any README or code reference, so they merge in order after pricing (A-11..A-13) and quote lifecycle (A-14, A-15).
 > 
 > Keep `allowedNextStatuses` client-side (documented assumption); no contract change. One commit per item or one per screen touched (short precise subjects, no attribution). Build, lint and tests green at each commit; push; reply with the commit hashes.
+
+### 2026-10-28 | coordinating session
 
 > I don't just want a report back. If any of them have outstanding or incomplete tasks each must complete. Handle the merge. Run end to end tests. Then commit and push as set out in the commits.
 
@@ -271,6 +281,8 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > 
 > One commit per item (short precise subjects, no attribution). Build, Tests.Unit and Tests.Integration (TEST_POSTGRES_CONNECTION from the repo's .env) must be green. Push, and reply with the commit hashes.
 
+### 2026-10-28 | coordinating session
+
 > Won't be reviewing on GitHub anymore.
 
 > Commits must be rectified where they're not correct. I need the sssions to get done so we get to the merge then you can run end to end tests.
@@ -286,6 +298,8 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > 
 > Keep short precise subjects, the repo's local author identity, and no attribution text. Check every commit on the new branch builds and passes Tests.Unit in a throwaway worktree. Confirm `git diff claude/observability-health-037f1b claude/observability-health-clean` is empty. Push the new branch normally, with no force. Reply with the new commit list and the per-commit test counts.
 
+### 2026-10-28 | coordinating session
+
 > When running end to end tests spit out a video of what happens to the browser while running the tests.
 
 ### 2026-10-28 21:10 | branch `claude/quote-lifecycle-83ab1f` | session `9fa6ad27`
@@ -299,6 +313,99 @@ Every prompt sent to Claude Code while building this project, in order. Appended
 > 
 > Keep short precise subjects, the repo's local author identity, and no attribution text. Check every commit builds and passes Tests.Unit in a throwaway worktree, and that Tests.Integration passes on the tip. Confirm `git diff claude/quote-lifecycle-83ab1f claude/quote-lifecycle-clean` is empty. Push the new branch normally, with no force. Reply with the final commit list and the per-commit test counts.
 
+### 2026-10-28 | coordinating session
+
 > Merge commits named after claude/* branches: rewrite and force-push main, delete the claude/* branches on GitHub. Download ffmpeg for video: yes.
 
 > Yes: write SOLUTION.md (design, AWS plan, AI usage and validation, LLM fit and trade-offs), finish the README's remaining sections, and draft bullet demo notes, one commit each.
+
+### 2026-10-29 10:07 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> Provide a video
+
+### 2026-10-29 10:22 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> Validate my db entries. I added same quote but did not get the 409
+
+### 2026-10-29 10:29 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> Got it. It's working. Explain to me how thid requirement is met. 
+> 
+> <pasted_content id="ef3b">
+> Task 2: Persistence and local operation
+> • Persist quotes and their status history in PostgreSQL
+> • Ensure the solution can initialize and evolve its storage for local use
+> • Support configuration via environment for things like connection details
+> You choose how to manage schema changes and configuration strategy.
+> </pasted_content id="ef3b">
+
+### 2026-10-29 10:37 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> Let's get a video for this one 
+> 
+> <pasted_content id="ef3b">
+> Provide a single, end-to-end signal that lets an operator follow a user action (for example, creating a quote
+> and changing its status) through your back end when running locally. Demonstrate this in your video.
+> You choose the signal type (for example, request tracing or structured logs) and what key events and
+> attributes are captured.
+> </pasted_content id="ef3b">
+
+### 2026-10-29 11:03 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> Getting an error
+
+### 2026-10-29 11:37 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> API NOT REACHABLE FROM the ui app running in my browser
+
+### 2026-10-29 11:44 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> How can I retrieve these logs to show tracing as nicely as you did in the video.
+
+### 2026-10-29 11:50 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> <pasted_content id="ef3b">
+> PS C:\Projects\SanlamConnect\advisor-quotes> node trace-view.mjs api.log bd541a108a138223ad5276606e3878c7
+> node:internal/modules/cjs/loader:1433
+>   throw err;
+>   ^
+> 
+> Error: Cannot find module 'C:\Projects\SanlamConnect\advisor-quotes\trace-view.mjs'
+>     at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+>     at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+>     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+>     at Function._load (node:internal/modules/cjs/loader:1216:25)
+>     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+>     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+>     at node:internal/main/run_main_module:36:49 {
+>   code: 'MODULE_NOT_FOUND',
+>   requireStack: []
+> }
+> 
+> Node.js v22.23.2
+> </pasted_content id="ef3b">
+
+### 2026-10-29 16:54 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> No, keep it local
+
+### 2026-10-29 16:56 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> It can't find it.
+
+### 2026-10-29 16:59 | branch `claude/react-ui-4efc1b` | session `ac0ab32e`
+
+> For the assessment requirements do we need to add the rating factors in the UI? the factor names don't look correct for user. If it's not necessary l want to remove that part. If it's necessary at least map it to readable values instead of the casing used.
+
+
+### 2026-10-29 | final review session (summarised, not verbatim)
+
+Before submitting, I used one more session to review the committed docs for accuracy and presentation against the brief and the submission email. These prompts are summarised here rather than quoted, because they quoted a private recruitment email. What came out of it:
+
+- clearer wording in SOLUTION.md and README.md on AI use and commit attribution;
+- a front-end architecture section and a key-prompts section in SOLUTION.md;
+- readable rating-factor labels in the UI;
+- the local trace viewer committed as `scripts/trace-view.mjs`;
+- demo notes kept out of the repo.
+
+No other functional change came out of this session.
