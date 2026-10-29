@@ -87,6 +87,11 @@ Every response carries an `X-Trace-Id` header (errors included). The same id is 
    dotnet run --project API
    ```
    Open http://localhost:16686, paste the trace id into "Lookup by Trace ID" (or pick service `advisor-quotes-api`) to see the same spans nested under the HTTP span.
+7. Without Docker, `scripts/trace-view.mjs` (Node, no dependencies) gives a similar view from the log file. Run the API with `Observability__LogFormat=text` and tee its output to `api.log` as in step 1, then:
+   ```bash
+   node scripts/trace-view.mjs api.log                # recent requests and their trace ids
+   node scripts/trace-view.mjs api.log <trace-id>     # HTML page: matching log lines and a span waterfall
+   ```
 
 Health probes are logged at Debug so they do not drown real traffic. Metrics are not printed by default; set `Observability__ConsoleMetrics=true` to dump them to the console every minute. When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, metrics go to that endpoint instead (Jaeger ignores them; a full OpenTelemetry collector keeps them).
 
