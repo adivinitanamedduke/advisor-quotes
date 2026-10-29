@@ -19,3 +19,18 @@ export function statusLabel(status: string): string {
   const words = status.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
+
+// Keys match PremiumCalculator.FactorNames in the API
+const factorLabels: Record<string, string> = {
+  coverUnits: 'Cover units (per R1 000)',
+  baseRatePer1000: 'Base rate per R1 000',
+  ageAtQuote: 'Age at quote date',
+  ageFactor: 'Age factor',
+  smokerFactor: 'Smoker loading',
+  termFactor: 'Term factor',
+}
+
+/** "smokerFactor" -> "Smoker loading"; unknown keys fall back to "Some key" */
+export function factorLabel(name: string): string {
+  return factorLabels[name] ?? statusLabel(name)
+}

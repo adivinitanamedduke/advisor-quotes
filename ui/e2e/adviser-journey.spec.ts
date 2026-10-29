@@ -44,7 +44,7 @@ test('adviser creates a quote, resubmits it and takes it to accepted', async ({ 
   // Detail: premium, rating factors and the initial history row
   await page.getByRole('button', { name: 'View quote' }).click()
   await expect(page.getByRole('heading', { name: new RegExp(`${reference}\\s+Draft`) })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'smokerFactor' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'Smoker loading' })).toBeVisible()
 
   // Draft → Sent to client → Accepted, each with a reason in the history
   await page.getByLabel('Reason (optional)').fill('Emailed to client')

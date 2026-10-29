@@ -3,7 +3,7 @@ import { useApi } from '../api/ApiContext'
 import type { QuoteDto, QuoteStatus } from '../api/types'
 import { useLoad } from '../api/useLoad'
 import { ErrorMessage } from '../ErrorMessage'
-import { formatDateTime, formatMoney, statusLabel } from '../format'
+import { factorLabel, formatDateTime, formatMoney, statusLabel } from '../format'
 import { allowedNextStatuses } from './status'
 
 interface Props {
@@ -86,7 +86,7 @@ function QuoteView({ quote, onUpdated }: { quote: QuoteDto; onUpdated: (quote: Q
           <tbody>
             {factors.map(([name, value]) => (
               <tr key={name}>
-                <td>{name}</td>
+                <td>{factorLabel(name)}</td>
                 <td className="number">{value}</td>
               </tr>
             ))}

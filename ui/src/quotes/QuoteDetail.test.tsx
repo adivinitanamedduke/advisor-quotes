@@ -16,7 +16,7 @@ function quote(status: QuoteStatus): QuoteDto {
     monthlyPremium: 412.35,
     currency: 'ZAR',
     pricingVersion: '2026-10',
-    ratingFactors: { age: 1.12, smoker: 1.5 },
+    ratingFactors: { ageFactor: 1.12, smokerFactor: 1.5, futureFactor: 1 },
     status,
     notes: null,
     createdAt: '2026-10-01T10:00:00Z',
@@ -42,9 +42,20 @@ describe('QuoteDetail', () => {
     // Assert
     expect(await screen.findByText('QT-000007')).toBeInTheDocument()
     expect(screen.getByText(/412,35|412\.35/)).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'smoker' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Smoker loading' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: '1.5' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ADV-1' })).toBeInTheDocument()
+  })
+
+  it('RatingFactors_ApiKeys_ShownAsReadableLabels', async () => {
+    // Arrange / Act
+    renderDetail(quote('Draft'))
+    await screen.findByText('QT-000007')
+
+    // Assert
+    expect(screen.getByRole('cell', { name: 'Age factor' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Future factor' })).toBeInTheDocument()
+    expect(screen.queryByRole('cell', { name: 'smokerFactor' })).not.toBeInTheDocument()
   })
 
   it.each<[QuoteStatus, string[]]>([
